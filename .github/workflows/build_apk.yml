@@ -1,80 +1,66 @@
 name: Build BeatVerse APK
-
-# Runs entirely on GitHub's servers — nothing to install on your phone.
-# Push this repo to GitHub (the GitHub mobile app, or the web UI's
-# "Add file → Upload files" from a phone browser, both work), then either
-# wait for this to run automatically or trigger it manually from the
-# Actions tab. Download the finished APK from the same run's "Artifacts"
-# section at the bottom of the page.
 on:
   push:
     branches: [ main ]
   workflow_dispatch: {}
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout this repo (lib/ + pubspec.yaml)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           path: repo
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
 
-      # This repo only ships lib/ + pubspec.yaml (no android/ios folders —
-      # those need a machine with the Flutter SDK to generate, which this
-      # runner has and your phone doesn't). So: scaffold a fresh project
-      # here to get real android/ios folders, then drop this repo's
-      # actual source on top of it before building.
-      - name: Scaffold android/ios platform folders
+      - name: Scaffold
         run: flutter create --platforms=android --org com.beatverse --project-name beatverse scaffold
 
-      - name: Overlay this repo's source onto the scaffold
+      - name: Copy source
         run: |
           rm -rf scaffold/lib
           cp -r repo/lib scaffold/lib
           cp repo/pubspec.yaml scaffold/pubspec.yaml
 
-      # Best-effort native wiring for audio_service's background playback
-      # notification. audio_service's own plugin manifest usually merges
-      # most of this automatically via Gradle, but permissions are safer
-      # added explicitly. If a future audio_service version already
-      # covers all of this, these extra lines are harmless no-ops.
-      - name: Add audio_service permissions to AndroidManifest.xml
+      - name: Fix Kotlin version with sed
         run: |
-          python3 - <<'PY'
-          import re
-          path = "scaffold/android/app/src/main/AndroidManifest.xml"
-          with open(path) as f:
-              xml = f.read()
-          perms = (
-              '    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>\n'
-              '    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>\n'
-              '    <uses-permission android:name="android.permission.WAKE_LOCK"/>\n'
-              '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n'
-          )
-          if "FOREGROUND_SERVICE_MEDIA_PLAYBACK" not in xml:
-              xml = xml.replace("<manifest ", "<manifest xmlns:tools=\"http://schemas.android.com/tools\" ", 1) if "xmlns:tools" not in xml else xml
-              xml = re.sub(r"(<manifest[^>]*>)", r"\1\n" + perms, xml, count=1)
-          with open(path, "w") as f:
-              f.write(xml)
-          PY
+          echo "BEFORE:"
+          cat scaffold/android/settings.gradle
+          sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' scaffold/android/settings.gradle
+          echo "AFTER:"
+          cat scaffold/android/settings.gradle
 
-      - name: flutter pub get
+      - name: Fix minSdk with sed
+        run: |
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/' scaffold/android/app/build.gradle
+          sed -i 's/compileSdk [0-9]*/compileSdk 34/' scaffold/android/app/build.gradle
+          sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/' scaffold/android/app/build.gradle
+          echo "build.gradle:"
+          cat scaffold/android/app/build.gradle
+
+      - name: Add permissions to manifest
+        run: |
+          sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|' scaffold/android/app/src/main/AndroidManifest.xml
+          sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/><uses-permission android:name="android.permission.FOREGROUND_SERVICE"/><uses-permission android:name="android.permission.WAKE_LOCK"/><application|' scaffold/android/app/src/main/AndroidManifest.xml
+          echo "Manifest done"
+
+      - name: pub get
         working-directory: scaffold
         run: flutter pub get
 
-      - name: Build release APK
+      - name: Build APK
         working-directory: scaffold
         run: flutter build apk --release
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: beatverse-apk
           path: scaffold/build/app/outputs/flutter-apk/app-release.apk
