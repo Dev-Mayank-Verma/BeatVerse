@@ -1,0 +1,50 @@
+name: beatverse
+description: "BeatVerse — Spotify-style music streaming app powered by Jamendo's Creative Commons catalog."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management
+  provider: ^6.1.2
+
+  # Networking (Jamendo API + lrclib lyrics)
+  http: ^1.2.2
+
+  # Thumbnail images with disk cache
+  cached_network_image: ^3.4.1
+
+  # Audio playback engine
+  just_audio: ^0.9.42
+
+  # Local persistence (liked / recents / playlists / downloads)
+  shared_preferences: ^2.3.3
+
+  # Google Fonts — 'Inter'
+  google_fonts: ^6.2.1
+
+  # Opens Telegram link
+  url_launcher: ^6.3.1
+
+  # Offline audio file paths
+  path_provider: ^2.1.4
+
+  # Spotify-style background playback + OS notification/lock-screen controls
+  audio_service: ^0.18.15
+
+  # Anonymous per-install UUID (no login)
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
