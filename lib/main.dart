@@ -4,15 +4,17 @@ import 'package:provider/provider.dart';
 import 'providers/downloads_provider.dart';
 import 'providers/library_provider.dart';
 import 'providers/player_provider.dart';
-import 'screens/root_shell.dart';
+import 'screens/splash_screen.dart';
 import 'services/audio_handler.dart';
+import 'services/notification_service.dart';
 import 'services/user_provider.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
 
-  BeatVerseAudioHandler? audioHandler;
+  BeatVerseAudioHandler audioHandler;
   try {
     audioHandler = await AudioService.init(
       builder: () => BeatVerseAudioHandler(),
@@ -46,7 +48,7 @@ class BeatVerseApp extends StatelessWidget {
         title: 'BeatVerse',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
-        home: const RootShell(),
+        home: const SplashScreen(),
       ),
     );
   }

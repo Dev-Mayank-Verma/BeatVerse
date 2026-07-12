@@ -20,7 +20,7 @@ import '../models/track.dart';
 /// gives you your own quota. Replace [_clientId] with your own key.
 class JamendoService {
   // ─── Replace with your own free key from devportal.jamendo.com ───────────
-  static const _clientId = 'b6747d04';
+  static const _clientId = '49bc6654';
   // ─────────────────────────────────────────────────────────────────────────
 
   static const _base = 'https://api.jamendo.com/v3.0';
