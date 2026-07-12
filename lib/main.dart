@@ -12,15 +12,19 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final audioHandler = await AudioService.init(
-    builder: () => BeatVerseAudioHandler(),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.beatverse.app.audio',
-      androidNotificationChannelName: 'BeatVerse',
-      androidNotificationIcon: 'mipmap/ic_launcher',
-      androidShowNotificationBadge: true,
-    ),
-  );
+  BeatVerseAudioHandler? audioHandler;
+  try {
+    audioHandler = await AudioService.init(
+      builder: () => BeatVerseAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.beatverse.app.audio',
+        androidNotificationChannelName: 'BeatVerse',
+        androidNotificationIcon: 'mipmap/ic_launcher',
+      ),
+    ).timeout(const Duration(seconds: 5));
+  } catch (_) {
+    audioHandler = BeatVerseAudioHandler();
+  }
 
   runApp(BeatVerseApp(audioHandler: audioHandler));
 }
