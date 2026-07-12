@@ -30,27 +30,21 @@ jobs:
           cp -r repo/lib scaffold/lib
           cp repo/pubspec.yaml scaffold/pubspec.yaml
 
-      - name: Fix Kotlin version with sed
+      - name: Fix Kotlin version
         run: |
-          echo "BEFORE:"
-          cat scaffold/android/settings.gradle
           sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' scaffold/android/settings.gradle
-          echo "AFTER:"
-          cat scaffold/android/settings.gradle
+          grep kotlin scaffold/android/settings.gradle
 
-      - name: Fix minSdk with sed
+      - name: Fix minSdkVersion only
         run: |
-          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/' scaffold/android/app/build.gradle
-          sed -i 's/compileSdk [0-9]*/compileSdk 34/' scaffold/android/app/build.gradle
-          sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/' scaffold/android/app/build.gradle
-          echo "build.gradle:"
-          cat scaffold/android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' scaffold/android/app/build.gradle
+          sed -i 's/minSdkVersion [0-9][0-9]*/minSdkVersion 21/' scaffold/android/app/build.gradle
+          grep minSdk scaffold/android/app/build.gradle
 
-      - name: Add permissions to manifest
+      - name: Add manifest permissions
         run: |
-          sed -i 's|<manifest|<manifest xmlns:tools="http://schemas.android.com/tools"|' scaffold/android/app/src/main/AndroidManifest.xml
-          sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/><uses-permission android:name="android.permission.FOREGROUND_SERVICE"/><uses-permission android:name="android.permission.WAKE_LOCK"/><application|' scaffold/android/app/src/main/AndroidManifest.xml
-          echo "Manifest done"
+          sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |' scaffold/android/app/src/main/AndroidManifest.xml
+          sed -i 's|<application |<uses-permission android:name="android.permission.INTERNET"/><uses-permission android:name="android.permission.FOREGROUND_SERVICE"/><uses-permission android:name="android.permission.WAKE_LOCK"/><application |' scaffold/android/app/src/main/AndroidManifest.xml
 
       - name: pub get
         working-directory: scaffold
