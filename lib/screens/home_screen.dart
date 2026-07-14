@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/track.dart';
 import '../providers/library_provider.dart';
 import '../services/jamendo_service.dart';
+import '../services/tuneproxy_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/section_row.dart';
 
@@ -11,39 +12,41 @@ class HomeScreen extends StatefulWidget {
   @override State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _Genre { final String label; final String tag; final int grad;
-  const _Genre(this.label, this.tag, this.grad); }
+class _Shortcut {
+  final String label; final String query; final int grad;
+  const _Shortcut(this.label, this.query, this.grad);
+}
 
-final _genres = [
-  const _Genre('Pop',        'pop',        0),
-  const _Genre('Electronic', 'electronic', 1),
-  const _Genre('Lofi Chill', 'lofi',       2),
-  const _Genre('Hip-Hop',    'hiphop',     3),
-  const _Genre('Rock',       'rock',       4),
-  const _Genre('Ambient',    'ambient',    5),
-  const _Genre('Acoustic',   'acoustic',   0),
-  const _Genre('R & B',      'rnb',        1),
-  const _Genre('Jazz',       'jazz',       2),
-  const _Genre('Dance',      'dance',      3),
+final _year = DateTime.now().year;
+final _shortcuts = [
+  _Shortcut('Bollywood $_year', 'bollywood hits $_year', 0),
+  _Shortcut('Arijit Singh',     'arijit singh',           1),
+  _Shortcut('Punjabi',          'punjabi songs $_year',   2),
+  _Shortcut('K-Pop',            'kpop hits',              3),
+  _Shortcut('Lofi Chill',       'lofi chill hindi',       4),
+  _Shortcut('English Pop',      'english pop hits',       5),
+  _Shortcut('Romantic',         'romantic hindi songs',   0),
+  _Shortcut('Workout',          'gym workout music',      1),
 ];
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _api = JamendoService();
+  final _yt     = TuneProxyService();
+  final _jamendo= JamendoService();
 
   late Future<List<Track>> _trending;
-  late Future<List<Track>> _newReleases;
-  late Future<List<Track>> _popTop;
+  late Future<List<Track>> _newMusic;
   late Future<List<Track>> _lofi;
+  late Future<List<Track>> _bollywood;
   late Future<List<Track>> _electronic;
 
   @override
   void initState() {
     super.initState();
-    _trending    = _api.trending();
-    _newReleases = _api.newReleases();
-    _popTop      = _api.byTag('pop');
-    _lofi        = _api.byTag('lofi');
-    _electronic  = _api.byTag('electronic');
+    _trending  = _yt.trending();
+    _bollywood = _yt.search('Bollywood hits $_year India');
+    _newMusic  = _yt.search('new Hindi songs $_year');
+    _lofi      = _jamendo.byTag('lofi');
+    _electronic= _jamendo.byTag('electronic');
   }
 
   String get _greeting {
@@ -56,55 +59,52 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final recent = context.watch<LibraryProvider>().recent;
-
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_greeting, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+                Text(_greeting,
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('600 000+ Creative Commons tracks — stream freely.',
-                    style: TextStyle(color: AppColors.mutedForeground, fontSize: 12.5)),
+                Text('Real YouTube music • Full CC audio',
+                    style: TextStyle(color: AppColors.mutedForeground, fontSize: 12)),
               ]),
             ),
           ),
-          // Genre shortcut grid
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _genres.length,
+                itemCount: _shortcuts.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10,
-                  childAspectRatio: 2.6,
+                  crossAxisCount: 2, mainAxisSpacing: 10,
+                  crossAxisSpacing: 10, childAspectRatio: 2.6,
                 ),
                 itemBuilder: (context, i) {
-                  final g = _genres[i];
-                  final grad = AppColors.vibeGradients[g.grad];
+                  final s = _shortcuts[i];
                   return Material(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        // SearchScreen can be pre-filled; for now we lazy-load
-                        // a new genre row inline (Search tab covers the search case).
-                      },
+                      onTap: () {},
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         alignment: Alignment.centerLeft,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(colors: grad,
-                              begin: Alignment.topLeft, end: Alignment.bottomRight),
+                          gradient: LinearGradient(
+                            colors: AppColors.vibeGradients[s.grad],
+                            begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          ),
                         ),
-                        child: Text(g.label,
+                        child: Text(s.label,
                             style: const TextStyle(fontWeight: FontWeight.bold,
                                 fontSize: 13, color: Colors.white)),
                       ),
@@ -122,21 +122,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   tracks: recent.take(12).toList(),
                   loading: false),
             ),
-          SliverToBoxAdapter(child: _row('🔥 Trending now',    _trending)),
-          SliverToBoxAdapter(child: _row('✨ New releases',    _newReleases)),
-          SliverToBoxAdapter(child: _row('🎵 Pop hits',        _popTop)),
-          SliverToBoxAdapter(child: _row('🌙 Lofi / Chill',   _lofi)),
-          SliverToBoxAdapter(child: _row('⚡ Electronic',      _electronic)),
+          SliverToBoxAdapter(child: _row('🔥 Trending in India', _trending)),
+          SliverToBoxAdapter(child: _row('🎵 New Bollywood', _bollywood)),
+          SliverToBoxAdapter(child: _row('✨ New Hindi Songs', _newMusic)),
+          SliverToBoxAdapter(child: _row('🌙 Lofi / Chill', _lofi)),
+          SliverToBoxAdapter(child: _row('⚡ Electronic', _electronic)),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
   }
 
-  Widget _row(String title, Future<List<Track>> future) =>
+  Widget _row(String title, Future<List<Track>> f) =>
       FutureBuilder<List<Track>>(
-        future: future,
-        builder: (context, snap) => SectionRow(
+        future: f,
+        builder: (ctx, snap) => SectionRow(
           title: title,
           tracks: snap.data,
           loading: snap.connectionState == ConnectionState.waiting,

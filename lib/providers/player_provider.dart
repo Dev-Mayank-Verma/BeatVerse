@@ -3,29 +3,26 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/track.dart';
 import '../services/audio_handler.dart';
+import '../services/audio_resolver.dart';
 
 enum RepeatMode { off, all, one }
 
-/// Reactive playback state + transport controls consumed by the UI.
-/// All audio operations delegate to BeatVerseAudioHandler so audio_service
-/// drives the OS notification/lock-screen player.
 class PlayerProvider extends ChangeNotifier {
   final BeatVerseAudioHandler _handler;
 
-  Track?        current;
-  List<Track>   queue      = [];
-  int           queueIndex = -1;
-  bool          isPlaying  = false;
-  bool          isBuffering= false;
-  Duration      position   = Duration.zero;
-  Duration      total      = Duration.zero;
-  bool          shuffle    = false;
-  RepeatMode    repeat     = RepeatMode.off;
-  double        playbackRate = 1.0;
-  String?       lastError;
+  Track?      current;
+  List<Track> queue      = [];
+  int         queueIndex = -1;
+  bool        isPlaying  = false;
+  bool        isBuffering= false;
+  Duration    position   = Duration.zero;
+  Duration    total      = Duration.zero;
+  bool        shuffle    = false;
+  RepeatMode  repeat     = RepeatMode.off;
+  double      playbackRate = 1.0;
+  String?     lastError;
 
   PlayerProvider(this._handler) {
-    // Wire notification prev/next → our queue logic
     _handler.onNotificationNext = next;
     _handler.onNotificationPrev = previous;
 
@@ -36,8 +33,12 @@ class PlayerProvider extends ChangeNotifier {
       if (s.processingState == ProcessingState.completed) _onCompleted();
       notifyListeners();
     });
-    _handler.player.positionStream.listen((p) { position = p; notifyListeners(); });
-    _handler.player.durationStream.listen((d) { total = d ?? Duration.zero; notifyListeners(); });
+    _handler.player.positionStream.listen((p) {
+      position = p; notifyListeners();
+    });
+    _handler.player.durationStream.listen((d) {
+      total = d ?? Duration.zero; notifyListeners();
+    });
   }
 
   void _onCompleted() {
@@ -54,30 +55,41 @@ class PlayerProvider extends ChangeNotifier {
     isBuffering= true;
     notifyListeners();
 
-    await _handler.playTrack(track);
+    // Resolve audio URL (handles both Jamendo tracks and YT metadata tracks)
+    final url = await AudioResolver.resolve(track);
 
-    // Check for error after the handler returns
-    final ps = _handler.player.processingState;
-    if (ps == ProcessingState.idle && !_handler.player.playing) {
-      lastError = 'Could not play — no stream URL for this track';
+    if (url == null || url.isEmpty) {
+      isBuffering = false;
+      lastError = 'No preview found for "${track.title}" — try another track';
+      notifyListeners();
+      return;
     }
+
+    // Play with resolved URL
+    final playable = Track(
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      duration: track.duration,
+      thumbnail: track.thumbnail,
+      streamOverride: url,
+    );
+    await _handler.playTrack(playable);
     isBuffering = false;
     notifyListeners();
   }
 
-  void togglePlay()   => isPlaying ? _handler.pause() : _handler.play();
-  void pause()        => _handler.pause();
-  void toggleShuffle(){ shuffle = !shuffle; notifyListeners(); }
+  void togglePlay()    => isPlaying ? _handler.pause() : _handler.play();
+  void pause()         => _handler.pause();
+  void toggleShuffle() { shuffle = !shuffle; notifyListeners(); }
 
   void cycleRepeat() {
     repeat = RepeatMode.values[(repeat.index + 1) % RepeatMode.values.length];
     notifyListeners();
   }
 
-  Future<void> setPlaybackRate(double rate) async {
-    playbackRate = rate;
-    await _handler.setSpeed(rate);
-    notifyListeners();
+  Future<void> setPlaybackRate(double r) async {
+    playbackRate = r; await _handler.setSpeed(r); notifyListeners();
   }
 
   void addToQueue(Track t) { queue = [...queue, t]; notifyListeners(); }
@@ -98,11 +110,9 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> next() async {
     if (queue.isEmpty || queueIndex == -1) return;
     if (shuffle && queue.length > 1) {
-      final r = Random();
-      int ni;
+      final r = Random(); int ni;
       do { ni = r.nextInt(queue.length); } while (ni == queueIndex);
-      await playTrack(queue[ni], queueList: queue);
-      return;
+      await playTrack(queue[ni], queueList: queue); return;
     }
     final ni = queueIndex + 1;
     if (ni >= queue.length) {
