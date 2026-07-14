@@ -25,30 +25,34 @@ jobs:
           rm -rf scaffold/lib
           cp -r repo/lib scaffold/lib
           cp repo/pubspec.yaml scaffold/pubspec.yaml
-      - name: Fix Kotlin version
+      - name: Fix Kotlin + minSdk
         run: |
           python3 << 'PY'
           import re
-          path = 'scaffold/android/settings.gradle'
-          txt  = open(path).read()
-          print("BEFORE:", txt)
-          txt  = re.sub(
-            r'id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+"[^"]+"',
-            'id "org.jetbrains.kotlin.android" version "1.9.24"',
-            txt
-          )
-          open(path,'w').write(txt)
-          print("AFTER:", txt)
-          PY
-      - name: Fix minSdk
-        run: |
-          python3 << 'PY'
-          import re
-          path = 'scaffold/android/app/build.gradle'
-          txt  = open(path).read()
-          txt  = re.sub(r'minSdkVersion\s+\S+', 'minSdkVersion 21', txt)
-          open(path,'w').write(txt)
-          print(open(path).read())
+
+          # Fix Kotlin in settings.gradle
+          p = 'scaffold/android/settings.gradle'
+          t = open(p).read()
+          t = re.sub(
+            r'(id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+")[^"]+(")',
+            r'\g<1>1.9.24\2', t)
+          open(p,'w').write(t)
+          print("settings.gradle done")
+
+          # Fix minSdk in app/build.gradle
+          p2 = 'scaffold/android/app/build.gradle'
+          t2 = open(p2).read()
+          print("ORIGINAL build.gradle:\n", t2)
+
+          # New format: minSdk = flutter.minSdkVersion  -> minSdk = 21
+          t2 = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 21', t2)
+          # Old format: minSdkVersion flutter.minSdkVersion -> minSdkVersion 21
+          t2 = re.sub(r'minSdkVersion\s+flutter\.minSdkVersion', 'minSdkVersion 21', t2)
+          # Any plain number: minSdkVersion 16 -> minSdkVersion 21
+          t2 = re.sub(r'minSdkVersion\s+\d+', 'minSdkVersion 21', t2)
+
+          open(p2,'w').write(t2)
+          print("FIXED build.gradle:\n", t2)
           PY
       - name: Write manifest
         run: |
@@ -80,7 +84,8 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
-                  <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+                  <receiver
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
                       android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.BOOT_COMPLETED"/>
