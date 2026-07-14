@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Spotify exact colors
-  static const background  = Color(0xFF121212);
-  static const surface     = Color(0xFF212121);
-  static const card        = Color(0xFF282828);
-  static const cardHover   = Color(0xFF333333);
-  static const primary     = Color(0xFF1DB954); // Spotify green
-  static const primaryDark = Color(0xFF158a3e);
-  static const foreground  = Color(0xFFFFFFFF);
-  static const muted       = Color(0xFFB3B3B3);
-  static const border      = Color(0xFF333333);
-  static const accent      = Color(0xFF1DB954);
-  static const error       = Color(0xFFE91429);
+  static const background    = Color(0xFF121212);
+  static const surface       = Color(0xFF212121);
+  static const card          = Color(0xFF282828);
+  static const cardHover     = Color(0xFF333333);
+  static const primary       = Color(0xFF1DB954);
+  static const primaryGlow   = Color(0xFF1ed760);
+  static const primaryDark   = Color(0xFF158a3e);
+  static const foreground    = Color(0xFFFFFFFF);
+  static const muted         = Color(0xFFB3B3B3);
+  static const mutedForeground = Color(0xFFB3B3B3);
+  static const border        = Color(0xFF333333);
+  static const secondary     = Color(0xFF282828);
+  static const accent        = Color(0xFF8D67AB);
+  static const destructive   = Color(0xFFE91429);
+  static const error         = Color(0xFFE91429);
 
   static final vibeGradients = <List<Color>>[
     [const Color(0xFF1DB954), const Color(0xFF191414)],
@@ -24,7 +27,6 @@ class AppColors {
     [const Color(0xFF0D73EC), const Color(0xFF191414)],
   ];
 
-  // Gradient pairs for category cards (no fade to black)
   static final cardGradients = <List<Color>>[
     [const Color(0xFF1DB954), const Color(0xFF158a3e)],
     [const Color(0xFF8D67AB), const Color(0xFF5b3d7a)],
@@ -50,8 +52,10 @@ class AppTheme {
       ),
       cardColor: AppColors.card,
       dividerColor: AppColors.border,
-      textTheme: GoogleFonts.interTextTheme(base.textTheme)
-          .apply(bodyColor: AppColors.foreground, displayColor: AppColors.foreground),
+      textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+        bodyColor: AppColors.foreground,
+        displayColor: AppColors.foreground,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.foreground,

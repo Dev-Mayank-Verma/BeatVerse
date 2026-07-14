@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../providers/player_provider_stub.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import 'downloads_screen.dart';
@@ -20,21 +19,8 @@ class _RootShellState extends State<RootShell> {
   int _idx = 0;
 
   static const _screens = [
-    HomeScreen(),
-    SearchScreen(),
-    LibraryScreen(),
-    PodcastsScreen(),
-    TrendingScreen(),
-    DownloadsScreen(),
-  ];
-
-  static const _navItems = [
-    [Icons.home_rounded,            Icons.home_outlined,           'Home'],
-    [Icons.search_rounded,          Icons.search_outlined,         'Search'],
-    [Icons.library_music_rounded,   Icons.library_music_outlined,  'Library'],
-    [Icons.mic_rounded,             Icons.mic_none_rounded,        'Podcasts'],
-    [Icons.local_fire_department,   Icons.local_fire_department_outlined, 'Hot'],
-    [Icons.download_rounded,        Icons.download_outlined,       'Downloads'],
+    HomeScreen(), SearchScreen(), LibraryScreen(),
+    PodcastsScreen(), TrendingScreen(), DownloadsScreen(),
   ];
 
   @override
@@ -59,11 +45,32 @@ class _RootShellState extends State<RootShell> {
         shadowColor: Colors.transparent,
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        destinations: _navItems.map((item) => NavigationDestination(
-          icon: Icon(item[1] as IconData, color: AppColors.muted),
-          selectedIcon: Icon(item[0] as IconData, color: AppColors.primary),
-          label: item[2] as String,
-        )).toList(),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined, color: AppColors.muted),
+            selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+            label: 'Home'),
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined, color: AppColors.muted),
+            selectedIcon: Icon(Icons.search_rounded, color: AppColors.primary),
+            label: 'Search'),
+          NavigationDestination(
+            icon: Icon(Icons.library_music_outlined, color: AppColors.muted),
+            selectedIcon: Icon(Icons.library_music_rounded, color: AppColors.primary),
+            label: 'Library'),
+          NavigationDestination(
+            icon: Icon(Icons.mic_none_rounded, color: AppColors.muted),
+            selectedIcon: Icon(Icons.mic_rounded, color: AppColors.primary),
+            label: 'Podcasts'),
+          NavigationDestination(
+            icon: Icon(Icons.local_fire_department_outlined, color: AppColors.muted),
+            selectedIcon: Icon(Icons.local_fire_department, color: AppColors.primary),
+            label: 'Hot'),
+          NavigationDestination(
+            icon: Icon(Icons.download_outlined, color: AppColors.muted),
+            selectedIcon: Icon(Icons.download_rounded, color: AppColors.primary),
+            label: 'Saved'),
+        ],
       ),
     );
   }

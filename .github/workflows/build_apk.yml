@@ -25,12 +25,31 @@ jobs:
           rm -rf scaffold/lib
           cp -r repo/lib scaffold/lib
           cp repo/pubspec.yaml scaffold/pubspec.yaml
-      - name: Fix Kotlin
-        run: sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' scaffold/android/settings.gradle
+      - name: Fix Kotlin version
+        run: |
+          python3 << 'PY'
+          import re
+          path = 'scaffold/android/settings.gradle'
+          txt  = open(path).read()
+          print("BEFORE:", txt)
+          txt  = re.sub(
+            r'id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+"[^"]+"',
+            'id "org.jetbrains.kotlin.android" version "1.9.24"',
+            txt
+          )
+          open(path,'w').write(txt)
+          print("AFTER:", txt)
+          PY
       - name: Fix minSdk
         run: |
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' scaffold/android/app/build.gradle
-          sed -i 's/minSdkVersion [0-9][0-9]*/minSdkVersion 21/' scaffold/android/app/build.gradle
+          python3 << 'PY'
+          import re
+          path = 'scaffold/android/app/build.gradle'
+          txt  = open(path).read()
+          txt  = re.sub(r'minSdkVersion\s+\S+', 'minSdkVersion 21', txt)
+          open(path,'w').write(txt)
+          print(open(path).read())
+          PY
       - name: Write manifest
         run: |
           cat > scaffold/android/app/src/main/AndroidManifest.xml << 'XMLEOF'
@@ -40,7 +59,6 @@ jobs:
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
               <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
               <application
                   android:label="BeatVerse"
                   android:name="${applicationName}"
@@ -55,16 +73,17 @@ jobs:
                       android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
                       android:hardwareAccelerated="true"
                       android:windowSoftInputMode="adjustResize">
-                      <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
+                      <meta-data android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme"/>
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
-                  <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver" android:exported="true">
+                  <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+                      android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                          <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
                       </intent-filter>
                   </receiver>
                   <meta-data android:name="flutterEmbedding" android:value="2"/>

@@ -1,9 +1,10 @@
 class Track {
-  final String id;       // yt-<videoId>
-  final String title;
-  final String artist;
-  final int    duration;
-  final String thumbnail;
+  final String  id;
+  final String  title;
+  final String  artist;
+  final int     duration;
+  final String  thumbnail;
+  final String? streamOverride;
 
   const Track({
     required this.id,
@@ -11,9 +12,11 @@ class Track {
     required this.artist,
     required this.duration,
     required this.thumbnail,
+    this.streamOverride,
   });
 
   String get videoId => id.replaceFirst('yt-', '');
+  bool   get isYoutube => id.startsWith('yt-');
 
   String get formattedDuration {
     if (duration <= 0) return '';
@@ -23,18 +26,20 @@ class Track {
   }
 
   factory Track.fromJson(Map<String, dynamic> j) => Track(
-    id: j['id'] as String,
-    title: j['title'] as String,
-    artist: j['artist'] as String,
-    duration: (j['duration'] as num?)?.toInt() ?? 0,
-    thumbnail: j['thumbnail'] as String? ?? '',
+    id:             j['id']        as String,
+    title:          j['title']     as String,
+    artist:         j['artist']    as String,
+    duration:       (j['duration'] as num?)?.toInt() ?? 0,
+    thumbnail:      j['thumbnail'] as String? ?? '',
+    streamOverride: j['streamOverride'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
     'id': id, 'title': title, 'artist': artist,
     'duration': duration, 'thumbnail': thumbnail,
+    if (streamOverride != null) 'streamOverride': streamOverride,
   };
 
   @override bool operator ==(Object o) => o is Track && o.id == id;
-  @override int get hashCode => id.hashCode;
+  @override int  get hashCode => id.hashCode;
 }
