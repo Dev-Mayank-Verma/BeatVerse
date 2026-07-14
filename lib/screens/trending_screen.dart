@@ -9,27 +9,21 @@ class TrendingScreen extends StatefulWidget {
   @override State<TrendingScreen> createState() => _TrendingScreenState();
 }
 
-const _regions = [
-  ['IN', '🇮🇳 India'],
-  ['US', '🇺🇸 Global'],
-  ['GB', '🇬🇧 UK'],
-  ['KR', '🇰🇷 K-Pop'],
-];
-
 class _TrendingScreenState extends State<TrendingScreen> {
   final _api = TuneProxyService();
-  String _region = 'IN';
   late Future<List<Track>> _top;
   late Future<List<Track>> _bollywood;
   late Future<List<Track>> _punjabi;
+  late Future<List<Track>> _english;
 
-  @override void initState() { super.initState(); _load(); }
-
-  void _load() {
+  @override
+  void initState() {
+    super.initState();
     final y = DateTime.now().year;
     _top      = _api.trending();
-    _bollywood= _api.search('Bollywood top songs $y');
-    _punjabi  = _api.search('Punjabi top songs $y');
+    _bollywood= _api.search('bollywood viral songs $y');
+    _punjabi  = _api.search('punjabi hits $y');
+    _english  = _api.search('english viral songs $y');
   }
 
   @override
@@ -41,30 +35,30 @@ class _TrendingScreenState extends State<TrendingScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(children: [
-            Icon(Icons.local_fire_department, color: AppColors.primary, size: 24),
+            const Icon(Icons.local_fire_department,
+                color: AppColors.primary, size: 28),
             const SizedBox(width: 8),
-            const Text('Trending', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+            const Text('Trending', style: TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w800)),
           ]),
         ),
-        const SizedBox(height: 12),
-        FutureBuilder<List<Track>>(
-          future: _top,
-          builder: (_, s) => SectionRow(
-            title: '🔥 Top in India right now',
-            tracks: s.data, loading: s.connectionState == ConnectionState.waiting),
-        ),
-        FutureBuilder<List<Track>>(
-          future: _bollywood,
-          builder: (_, s) => SectionRow(
-            title: '🎬 Bollywood charts',
-            tracks: s.data, loading: s.connectionState == ConnectionState.waiting),
-        ),
-        FutureBuilder<List<Track>>(
-          future: _punjabi,
-          builder: (_, s) => SectionRow(
-            title: '🎵 Punjabi hits',
-            tracks: s.data, loading: s.connectionState == ConnectionState.waiting),
-        ),
+        const SizedBox(height: 16),
+        FutureBuilder<List<Track>>(future: _top,
+            builder: (_, s) => SectionRow(title: '🔥 Top in India',
+                tracks: s.data,
+                loading: s.connectionState == ConnectionState.waiting)),
+        FutureBuilder<List<Track>>(future: _bollywood,
+            builder: (_, s) => SectionRow(title: '🎬 Bollywood Viral',
+                tracks: s.data,
+                loading: s.connectionState == ConnectionState.waiting)),
+        FutureBuilder<List<Track>>(future: _punjabi,
+            builder: (_, s) => SectionRow(title: '🎵 Punjabi Charts',
+                tracks: s.data,
+                loading: s.connectionState == ConnectionState.waiting)),
+        FutureBuilder<List<Track>>(future: _english,
+            builder: (_, s) => SectionRow(title: '🌍 English Viral',
+                tracks: s.data,
+                loading: s.connectionState == ConnectionState.waiting)),
         const SizedBox(height: 100),
       ],
     ),
